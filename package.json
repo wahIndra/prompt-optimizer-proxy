@@ -1,0 +1,33 @@
+{
+  "name": "prompt-optimizer-proxy",
+  "version": "1.0.0",
+  "description": "A high-performance middleware proxy for LLMs featuring deep semantic compression, prompt minification, and real-time streaming.",
+  "main": "index.js",
+  "bin": {
+    "prompt-optimizer": "./bin/optimizer.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node src/proxy.js"
+  },
+  "keywords": [
+    "llm",
+    "proxy",
+    "prompt-caching",
+    "optimization",
+    "openai",
+    "anthropic",
+    "gemini",
+    "ollama"
+  ],
+  "author": "IndrawanW",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "node-fetch": "^3.3.2",
+    "sqlite3": "^6.0.1"
+  },
+  "type": "module"
+}

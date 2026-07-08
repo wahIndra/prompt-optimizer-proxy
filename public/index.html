@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Prompt Optimizer Dashboard</title>
+    <meta name="description" content="Premium dashboard to monitor AI token usage and cost savings.">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon"></div>
+                <h1>PromptOptimizer<span>.</span></h1>
+            </div>
+            <div class="header-actions">
+                <button id="refresh-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path></svg>
+                    Refresh
+                </button>
+            </div>
+        </header>
+
+        <nav class="top-nav">
+            <button class="nav-btn active" data-target="view-overview">Overview</button>
+            <button class="nav-btn" data-target="view-playground">Playground</button>
+            <button class="nav-btn" data-target="view-audit">Audit Trail</button>
+            <button class="nav-btn" data-target="view-settings">Settings</button>
+        </nav>
+
+        <main>
+            <!-- OVERVIEW VIEW -->
+            <div id="view-overview" class="view active">
+                <section class="stats-grid">
+                    <div class="stat-card glass-panel">
+                        <h3>Total Tokens Processed</h3>
+                        <div class="stat-value" id="stat-total-tokens">0</div>
+                        <div class="stat-trend positive">Optimized for cost efficiency</div>
+                    </div>
+                    <div class="stat-card glass-panel">
+                        <h3>Total Tokens Saved</h3>
+                        <div class="stat-value highlight" id="stat-saved-tokens">0</div>
+                        <div class="stat-trend positive">Through context minification</div>
+                    </div>
+                    <div class="stat-card glass-panel">
+                        <h3>Total Spend</h3>
+                        <div class="stat-value" id="stat-total-cost">$0.00</div>
+                        <div class="stat-trend neutral">Across all providers</div>
+                    </div>
+                </section>
+
+                <section class="charts-section">
+                    <div class="chart-container glass-panel main-chart">
+                        <h2>Usage Over Time</h2>
+                        <div class="chart-wrapper">
+                            <canvas id="usageChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container glass-panel side-chart">
+                        <h2>Provider Breakdown</h2>
+                        <div class="chart-wrapper">
+                            <canvas id="providerChart"></canvas>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="requests-section glass-panel">
+                    <h2>Recent Requests</h2>
+                    <div class="table-container">
+                        <table id="requests-table">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Provider</th>
+                                    <th>Model</th>
+                                    <th>Saved Tokens</th>
+                                    <th>Cached Tokens</th>
+                                    <th>Total Cost</th>
+                                    <th>Latency</th>
+                                </tr>
+                            </thead>
+                            <tbody id="requests-body">
+                                <!-- Rows injected via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <!-- PLAYGROUND VIEW -->
+            <div id="view-playground" class="view">
+                <section class="playground-section glass-panel">
+                    <div class="playground-layout">
+                        <!-- Chat Area -->
+                        <div class="chat-container">
+                            <div class="chat-header">
+                                <h2>Interactive Playground</h2>
+                                <div id="chat-stats" class="chat-stats">
+                                    <span class="stat-badge"><span id="pg-saved">0</span> tokens saved</span>
+                                    <span class="stat-badge cost"><span id="pg-cost">$0.00</span></span>
+                                </div>
+                            </div>
+                            <div id="chat-history" class="chat-history">
+                                <!-- Messages injected here -->
+                                <div class="message system">
+                                    <div class="message-content">Welcome to the Prompt Optimizer Playground! Try sending a message to see the proxy in action.</div>
+                                </div>
+                            </div>
+                            <div class="chat-input-area">
+                                <textarea id="chat-input" placeholder="Type your prompt here... (Shift+Enter for newline)"></textarea>
+                                <button id="chat-send-btn" class="primary-btn">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Settings Sidebar -->
+                        <div class="playground-sidebar glass-panel">
+                            <h3>Playground Settings</h3>
+                            <div class="form-group">
+                                <label>Target Provider</label>
+                                <select id="pg-provider">
+                                    <option value="openai">OpenAI (gpt-4o)</option>
+                                    <option value="anthropic">Anthropic (claude-3-5-sonnet-20240620)</option>
+                                    <option value="gemini">Google (gemini-1.5-pro)</option>
+                                    <option value="ollama">Ollama (llama3.2)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Target Model</label>
+                                <input type="text" id="pg-model" value="gpt-4o" placeholder="Model ID">
+                            </div>
+                            <div class="form-group toggle-group">
+                                <label class="toggle">
+                                    <input type="checkbox" id="pg-semantic" checked>
+                                    <span class="slider"></span>
+                                </label>
+                                <span>Enable Semantic Compression</span>
+                                <small style="display:block; color:var(--text-muted); margin-top:4px;">Uses Ollama to summarize context > 8k tokens.</small>
+                            </div>
+                            <button id="pg-clear-btn" class="secondary-btn" style="width: 100%; margin-top: auto;">Clear History</button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- AUDIT TRAIL VIEW -->
+            <div id="view-audit" class="view">
+                <section class="requests-section glass-panel">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
+                        <h2>Full Audit Trail (Top 100)</h2>
+                        <button id="refresh-logs-btn" class="secondary-btn">Refresh Logs</button>
+                    </div>
+                    <div class="table-container">
+                        <table id="audit-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Timestamp</th>
+                                    <th>Provider</th>
+                                    <th>Model</th>
+                                    <th>Orig Tokens</th>
+                                    <th>Opt Tokens</th>
+                                    <th>Cached Tokens</th>
+                                    <th>Out Tokens</th>
+                                    <th>Cost</th>
+                                    <th>Latency</th>
+                                </tr>
+                            </thead>
+                            <tbody id="audit-body">
+                                <!-- Rows injected via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <!-- SETTINGS VIEW -->
+            <div id="view-settings" class="view">
+                <section class="glass-panel settings-section">
+                    <h2>Provider Configuration</h2>
+                    <div class="provider-grid">
+                        <!-- OpenAI Card -->
+                        <div class="provider-card glass-panel" data-provider="openai">
+                            <div class="card-icon" style="background: #10A37F;">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2057 5.9847 5.9847 0 0 0 3.989-2.9 6.051 6.051 0 0 0-.7388-7.0732zM13.2599 22.5002c-1.217 0-2.392-.412-3.351-1.1685l.1352-.0787 5.309-3.0645a1.4727 1.4727 0 0 0 .7427-1.2829V9.7562l1.6215.936c.038.0213.0617.0618.0617.1044v8.4286a4.57 4.57 0 0 1-4.5191 4.5003zm-7.7978-2.5292a4.536 4.536 0 0 1-2.2547-3.9048V7.6376c0-.0475.0238-.088.0617-.1117l1.6215-.936v6.529c0 .546.29 1.0494.757 1.3058l5.3232 3.0645-2.7303 1.5714-.1446.0759a4.5606 4.5606 0 0 1-2.6338-.8572zM3.208 9.7562A4.551 4.551 0 0 1 5.4674 5.8514a4.57 4.57 0 0 1 3.9048 0l2.7351 1.576-5.328 3.0645A1.4727 1.4727 0 0 0 6.0462 11.77v6.113L4.4153 16.942a.116.116 0 0 1-.0617-.1044V9.7562zm17.584 7.2917a4.536 4.536 0 0 1-2.2546 3.9048l-2.7351 1.5714-2.7303-1.5714V14.433c0-.546-.29-1.0494-.757-1.3058L6.9918 10.0626l2.7303-1.576.1446-.0759a4.5653 4.5653 0 0 1 3.9048 0l5.3232 3.0645c.038.0238.0617.0642.0617.1118v6.5457zm.0333-7.551l-1.6216-.936v-6.529c0-.0475-.0237-.088-.0617-.1117l-1.6215.936v6.529c0 .546-.29 1.0494-.757 1.3058l-5.3232 3.0645 2.7302-1.5714.1446-.0759a4.5606 4.5606 0 0 1 2.6338.8572 4.551 4.551 0 0 1 2.2547 3.9048V7.6376a4.57 4.57 0 0 1-4.5192-4.5002c1.217 0 2.392.412 3.351 1.1685l-.1352.0787-5.309 3.0645a1.4727 1.4727 0 0 0-.7427 1.2829V15.75l-1.6215-.936c-.038-.0213-.0617-.0618-.0617-.1044V6.2809A4.57 4.57 0 0 1 13.2599 1.78a4.5653 4.5653 0 0 1 3.9048 2.2642h.0047l2.7303 1.5714a.116.116 0 0 1 .0617.1044v8.4332zM12.0152 14.887l-3.3225-1.9135V9.1362l3.3225-1.9135 3.3225 1.9135v3.8373z"/></svg>
+                            </div>
+                            <div class="card-content">
+                                <h3>OpenAI</h3>
+                                <p>GPT-4o, GPT-3.5</p>
+                            </div>
+                            <button class="config-btn">Configure</button>
+                        </div>
+
+                        <!-- Anthropic Card -->
+                        <div class="provider-card glass-panel" data-provider="anthropic">
+                            <div class="card-icon" style="background: #D4AC8E;">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M17.472 17.518H24V21.6H15.114l2.358-4.082zm-4.708-8.15l-3.084 5.344h6.168l-3.084-5.344zm0-3.368l8.033 13.916h-4.717l-3.316-5.742h-6.17l-3.316 5.742H-1.5L12.764 6z"/></svg>
+                            </div>
+                            <div class="card-content">
+                                <h3>Anthropic</h3>
+                                <p>Claude 3.5 Sonnet</p>
+                            </div>
+                            <button class="config-btn">Configure</button>
+                        </div>
+
+                        <!-- Gemini Card -->
+                        <div class="provider-card glass-panel" data-provider="gemini">
+                            <div class="card-icon" style="background: #4285F4;">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M12 24c0-6.627-5.373-12-12-12 6.627 0 12-5.373 12-12 0 6.627 5.373 12 12 12-6.627 0-12 5.373-12 12z"/></svg>
+                            </div>
+                            <div class="card-content">
+                                <h3>Gemini</h3>
+                                <p>Gemini 1.5 Pro</p>
+                            </div>
+                            <button class="config-btn">Configure</button>
+                        </div>
+
+                        <!-- Ollama Card -->
+                        <div class="provider-card glass-panel" data-provider="ollama">
+                            <div class="card-icon" style="background: #FFFFFF;">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="black"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18c-4.418 0-8-3.582-8-8s3.582-8 8-8 8 3.582 8 8-3.582 8-8 8zm0-14c-3.314 0-6 2.686-6 6s2.686 6 6 6 6-2.686 6-6-2.686-6-6-6z"/></svg>
+                            </div>
+                            <div class="card-content">
+                                <h3>Ollama</h3>
+                                <p>Local & Cloud Hosting</p>
+                            </div>
+                            <button class="config-btn">Configure</button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Configuration Modal -->
+    <div id="config-modal" class="modal-overlay">
+        <div class="modal glass-panel">
+            <div class="modal-header">
+                <h2 id="modal-title">Configure Provider</h2>
+                <button id="modal-close" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="modal-form" class="config-form">
+                    <div class="form-group">
+                        <label id="modal-key-label">API Key / Token</label>
+                        <input type="password" id="modal-key-input" autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label id="modal-url-label">Base URL / Host</label>
+                        <input type="text" id="modal-url-input" autocomplete="off">
+                    </div>
+                    <div id="modal-status"></div>
+                </form>
+                
+                <div class="model-discovery-section">
+                    <div class="form-group">
+                        <label>Default Model (Override IDE)</label>
+                        <select id="modal-model-select">
+                            <option value="">No model selected</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="modal-save-btn" class="save-key-btn" style="width: 100%; justify-content: center;">Save Configuration</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
