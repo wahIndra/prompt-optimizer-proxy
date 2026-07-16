@@ -9,7 +9,9 @@ import { getConfig, setConfig } from './config.js';
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+app.use(cors({
+    origin: ['http://localhost:3000', 'http://127.0.0.1:3000']
+}));
 app.use(express.json({ limit: '50mb' }));
 
 // Serve static files for the dashboard
@@ -157,7 +159,11 @@ app.get('/api/config', (req, res) => {
         // Mask keys
         const masked = {};
         for (const [k, v] of Object.entries(config)) {
-            masked[k] = v.length > 8 ? v.substring(0, 4) + '...' + v.substring(v.length - 4) : '***';
+            if (k.endsWith('_API_KEY')) {
+                masked[k] = v.length > 8 ? v.substring(0, 4) + '...[HIDDEN]' : '***';
+            } else {
+                masked[k] = v;
+            }
         }
         res.json(masked);
     } catch (err) {

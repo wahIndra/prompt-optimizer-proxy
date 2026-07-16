@@ -164,6 +164,7 @@ navBtns.forEach(btn => {
         // Trigger view-specific loads
         if (targetId === "view-audit") fetchAuditLogs();
         if (targetId === "view-settings") fetchConfig();
+        if (targetId === "view-playground") initPlayground();
     });
 });
 
@@ -376,6 +377,57 @@ const chatSendBtn = document.getElementById("chat-send-btn");
 const pgClearBtn = document.getElementById("pg-clear-btn");
 const pgSaved = document.getElementById("pg-saved");
 const pgCost = document.getElementById("pg-cost");
+const pgProviderEl = document.getElementById("pg-provider");
+const pgModelEl = document.getElementById("pg-model");
+
+async function initPlayground() {
+    await fetchConfig();
+    if (globalConfig.GEMINI_DEFAULT_MODEL) pgProviderEl.value = 'gemini';
+    else if (globalConfig.OPENAI_DEFAULT_MODEL) pgProviderEl.value = 'openai';
+    else if (globalConfig.ANTHROPIC_DEFAULT_MODEL) pgProviderEl.value = 'anthropic';
+    else if (globalConfig.OLLAMA_DEFAULT_MODEL) pgProviderEl.value = 'ollama';
+    
+    updatePlaygroundModel();
+}
+
+async function updatePlaygroundModel() {
+    await fetchConfig();
+    const provider = pgProviderEl.value;
+    
+    let defaultModel = '';
+    if (provider === 'openai') defaultModel = globalConfig.OPENAI_DEFAULT_MODEL || 'gpt-4o';
+    if (provider === 'anthropic') defaultModel = globalConfig.ANTHROPIC_DEFAULT_MODEL || 'claude-3-5-sonnet-20240620';
+    if (provider === 'gemini') defaultModel = globalConfig.GEMINI_DEFAULT_MODEL || 'gemini-1.5-pro';
+    if (provider === 'ollama') defaultModel = globalConfig.OLLAMA_DEFAULT_MODEL || 'llama3.2';
+    
+    pgModelEl.innerHTML = '<option value="">Fetching models...</option>';
+    
+    try {
+        const res = await fetch("/v1/models");
+        const data = await res.json();
+        const models = data.data.filter(m => m.provider === provider);
+        
+        if (models.length > 0) {
+            let html = '';
+            models.forEach(m => {
+                const selected = (defaultModel === m.id) ? 'selected' : '';
+                html += `<option value="${m.id}" ${selected}>${m.id}</option>`;
+            });
+            // If the default model isn't in the list, add it as a fallback
+            if (!models.some(m => m.id === defaultModel) && defaultModel) {
+                 html = `<option value="${defaultModel}" selected>${defaultModel}</option>` + html;
+            }
+            pgModelEl.innerHTML = html;
+        } else {
+            pgModelEl.innerHTML = `<option value="${defaultModel}">${defaultModel} (Not connected)</option>`;
+        }
+    } catch (err) {
+        pgModelEl.innerHTML = `<option value="${defaultModel}">${defaultModel}</option>`;
+    }
+}
+
+pgProviderEl.addEventListener('change', updatePlaygroundModel);
+
 
 function appendMessage(role, content) {
     const msgDiv = document.createElement("div");
@@ -454,6 +506,10 @@ async function sendPlaygroundMessage() {
                         const data = JSON.parse(dataStr);
                         if (data.choices && data.choices[0].delta && data.choices[0].delta.content) {
                             fullResponse += data.choices[0].delta.content;
+                            assistantContentDiv.innerText = fullResponse;
+                            chatHistoryEl.scrollTop = chatHistoryEl.scrollHeight;
+                        } else if (data.candidates && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0].text) {
+                            fullResponse += data.candidates[0].content.parts[0].text;
                             assistantContentDiv.innerText = fullResponse;
                             chatHistoryEl.scrollTop = chatHistoryEl.scrollHeight;
                         }

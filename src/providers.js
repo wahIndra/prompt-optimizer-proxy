@@ -95,11 +95,20 @@ async function callGemini(model, payload, dynamicApiKey) {
     let baseUrl = getConfig('GEMINI_BASE_URL') || process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta';
     baseUrl = baseUrl.replace(/\/$/, '');
     
+    // Translate OpenAI format to Gemini format
+    const geminiPayload = {};
+    if (payload.messages) {
+        geminiPayload.contents = payload.messages.map(m => ({
+            role: m.role === 'assistant' ? 'model' : 'user',
+            parts: [{ text: m.content }]
+        }));
+    }
+
     const endpoint = payload.stream ? 'streamGenerateContent?alt=sse&' : 'generateContent?';
     const res = await fetch(`${baseUrl}/models/${model}:${endpoint}key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(geminiPayload)
     });
     return payload.stream ? res.body : res.json();
 }
